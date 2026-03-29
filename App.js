@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, Alert, ActivityIndicator,
-  SafeAreaView, StatusBar, Platform,
+  SafeAreaView, StatusBar, Platform, KeyboardAvoidingView,
 } from "react-native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -85,7 +85,8 @@ const EditProfile = ({ profile, onSave, onCancel }) => {
         <Text style={styles.screenTitle}>{profile.name ? "Edit Person" : "New Person"}</Text>
         <Btn label="Save" onPress={() => onSave(p)} fill color={BLUE} small />
       </View>
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={0}>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={{ height: 10 }} />
 
         <SectionLabel text="Name *" />
@@ -175,6 +176,7 @@ const EditProfile = ({ profile, onSave, onCancel }) => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -263,7 +265,8 @@ const ProfileDetail = ({ profile, onUpdate, onEdit, onDelete, onBack, onQuickLog
         <View style={{ width: 4 }} />
         <Btn label="Del" onPress={() => Alert.alert("Delete", `Remove ${p.name}?`, [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => onDelete(p.id) }])} color={RED} small />
       </View>
-      <ScrollView style={styles.container}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={{ height: 10 }} />
 
         {overdue && <Card style={{ backgroundColor: "#FCEBEB", borderColor: RED }}><Text style={{ color: RED, fontSize: 13 }}>⚠️ No contact in {daysSince(p.log?.[0]?.date)} days{decayAmt > 0 ? ` — score decaying (−${decayAmt} pts)` : ""}</Text></Card>}
@@ -373,6 +376,7 @@ const ProfileDetail = ({ profile, onUpdate, onEdit, onDelete, onBack, onQuickLog
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
