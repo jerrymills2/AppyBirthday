@@ -9,6 +9,11 @@ const getDB = () => {
 
 export const initDB = () => {
   const d = getDB();
+  // Migrate: add relationshipType column if it doesn't exist
+  try {
+    d.runSync("ALTER TABLE profiles ADD COLUMN relationshipType TEXT DEFAULT ''");
+  } catch (_) { /* column already exists */ }
+
   const tables = [
     `CREATE TABLE IF NOT EXISTS profiles (
       id INTEGER PRIMARY KEY,
@@ -79,12 +84,13 @@ export const saveProfile = (profile) => {
   const d = getDB();
   d.runSync(
     `INSERT OR REPLACE INTO profiles
-     (id,name,birthday,anniversary,address,interests,loveLanguage,groups,budget,photo,score,streakMonths,lastStreakMonth)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     (id,name,birthday,anniversary,address,interests,loveLanguage,relationshipType,groups,budget,photo,score,streakMonths,lastStreakMonth)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       profile.id, profile.name, profile.birthday || "", profile.anniversary || "",
       profile.address || "", profile.interests || "",
       JSON.stringify(Array.isArray(profile.loveLanguage) ? profile.loveLanguage : profile.loveLanguage ? [profile.loveLanguage] : []),
+      profile.relationshipType || "",
       JSON.stringify(profile.groups || []),
       profile.budget || 0, profile.photo || null,
       profile.score || 0, profile.streakMonths || 0, profile.lastStreakMonth || "",

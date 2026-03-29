@@ -12,8 +12,9 @@ import { initDB, getAllProfiles, saveProfile, deleteProfile, addLog, updateLog, 
 import { callAI } from "./src/api";
 import { requestPermissions, rescheduleAllNotifications } from "./src/notifications";
 import {
-  BLUE, GOLD, LIGHT_BLUE, LIGHT_GOLD, RED, GREEN, LIGHT_GREEN, PURPLE, LIGHT_PURPLE,
+  BLUE, GOLD, LIGHT_BLUE, LIGHT_GOLD, RED, GREEN, LIGHT_GREEN, PURPLE, LIGHT_PURPLE, PINK, LIGHT_PINK,
   LOVE_LANGUAGES, GROUPS, ACTIONS, LETTER_TEMPLATES, BADGES, TABS,
+  RELATIONSHIP_TYPES, getHolidayReminders,
   newProfile, getTier, getInitials, nextOcc, fmtDate, daysSince, thisYear,
   decayedScore, profileSummary,
 } from "./src/constants";
@@ -132,6 +133,19 @@ const EditProfile = ({ profile, onSave, onCancel }) => {
           {GROUPS.map((g) => (
             <TouchableOpacity key={g} onPress={() => toggleGroup(g)} style={[styles.chipBtn, (p.groups || []).includes(g) && { backgroundColor: LIGHT_GREEN, borderColor: GREEN }]}>
               <Text style={[styles.chipText, (p.groups || []).includes(g) && { color: GREEN }]}>{g}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <SectionLabel text="Relationship (for holiday reminders)" />
+        <View style={styles.chipRow}>
+          {RELATIONSHIP_TYPES.map((r) => (
+            <TouchableOpacity
+              key={r.label}
+              onPress={() => set("relationshipType", p.relationshipType === r.label ? "" : r.label)}
+              style={[styles.chipBtn, p.relationshipType === r.label && { backgroundColor: LIGHT_PINK, borderColor: PINK }]}
+            >
+              <Text style={[styles.chipText, p.relationshipType === r.label && { color: PINK }]}>{r.icon} {r.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -331,7 +345,10 @@ const ProfileDetail = ({ profile, onUpdate, onEdit, onDelete, onBack, onQuickLog
         <Avatar p={p} size={40} />
         <View style={{ flex: 1, marginLeft: 8 }}>
           <Text style={styles.screenTitle} numberOfLines={1}>{p.name}</Text>
-          <Pill label={tier.label} color={tier.color} bg={tier.bg} />
+          <View style={styles.row}>
+            <Pill label={tier.label} color={tier.color} bg={tier.bg} />
+            {p.relationshipType ? (() => { const rel = RELATIONSHIP_TYPES.find((r) => r.label === p.relationshipType); return <Pill label={`${rel?.icon || ""} ${p.relationshipType}`} color={PINK} bg={LIGHT_PINK} />; })() : null}
+          </View>
         </View>
         <Btn label="Edit" onPress={onEdit} color={BLUE} small />
         <View style={{ width: 4 }} />
@@ -597,10 +614,12 @@ export default function App() {
   const reminders = profiles.flatMap((p) => {
     const items = [];
     const bd = nextOcc(p.birthday);
-    if (bd !== null && bd <= 30) items.push({ name: p.name, type: "Birthday", days: bd, id: p.id });
+    if (bd !== null && bd <= 30) items.push({ name: p.name, type: "🎂 Birthday", days: bd, id: p.id });
     const an = nextOcc(p.anniversary);
-    if (an !== null && an <= 30) items.push({ name: p.name, type: "Anniversary", days: an, id: p.id });
-    p.kids?.forEach((k) => { const kd = nextOcc(k.birthday); if (kd !== null && kd <= 30) items.push({ name: p.name, type: `${k.name}'s Birthday`, days: kd, id: p.id }); });
+    if (an !== null && an <= 30) items.push({ name: p.name, type: "💍 Anniversary", days: an, id: p.id });
+    p.kids?.forEach((k) => { const kd = nextOcc(k.birthday); if (kd !== null && kd <= 30) items.push({ name: p.name, type: `🎂 ${k.name}'s Birthday`, days: kd, id: p.id }); });
+    // Holiday reminders based on relationship type
+    getHolidayReminders(p, 30).forEach((r) => items.push(r));
     const ds = daysSince(p.log?.[0]?.date);
     if (ds > 30) items.push({ name: p.name, type: ds > 365 ? "Start Connecting Now!" : `No contact in ${ds} days`, days: null, id: p.id });
     return items;
@@ -753,7 +772,7 @@ export default function App() {
                       <Text style={{ fontSize: 15, fontWeight: "500" }}>{p.name}</Text>
                       <View style={styles.row}>
                         <Pill label={tier.label} color={tier.color} bg={tier.bg} />
-                        {(p.groups || []).slice(0, 1).map((g) => <Pill key={g} label={g} color={GREEN} bg={LIGHT_GREEN} />)}
+                        {p.relationshipType ? (() => { const rel = RELATIONSHIP_TYPES.find((r) => r.label === p.relationshipType); return <Pill label={`${rel?.icon || ""} ${p.relationshipType}`} color={PINK} bg={LIGHT_PINK} />; })() : (p.groups || []).slice(0, 1).map((g) => <Pill key={g} label={g} color={GREEN} bg={LIGHT_GREEN} />)}
                       </View>
                       {bd !== null && bd <= 7 && <Text style={{ fontSize: 12, color: GOLD }}>🎂 Birthday in {bd === 0 ? "today!" : `${bd}d`}</Text>}
                     </View>

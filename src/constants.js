@@ -7,6 +7,8 @@ export const GREEN = "#3B6D11";
 export const LIGHT_GREEN = "#EAF3DE";
 export const PURPLE = "#534AB7";
 export const LIGHT_PURPLE = "#EEEDFE";
+export const PINK = "#C2185B";
+export const LIGHT_PINK = "#FCE4EC";
 
 export const LOVE_LANGUAGES = [
   "Words of Affirmation",
@@ -26,6 +28,116 @@ export const GROUPS = [
   "Other",
 ];
 
+// Relationship types with their associated holidays and icons
+export const RELATIONSHIP_TYPES = [
+  { label: "Wife",        icon: "💍", holidays: ["valentine", "anniversary", "mothers_day"] },
+  { label: "Husband",     icon: "💍", holidays: ["valentine", "anniversary", "fathers_day"] },
+  { label: "Mother",      icon: "👩", holidays: ["mothers_day"] },
+  { label: "Father",      icon: "👨", holidays: ["fathers_day"] },
+  { label: "Daughter",    icon: "👧", holidays: ["valentine", "daughters_day"] },
+  { label: "Son",         icon: "👦", holidays: ["sons_day"] },
+  { label: "Sister",      icon: "👩", holidays: ["siblings_day"] },
+  { label: "Brother",     icon: "👦", holidays: ["siblings_day"] },
+  { label: "Grandmother", icon: "👵", holidays: ["mothers_day", "grandparents_day"] },
+  { label: "Grandfather", icon: "👴", holidays: ["fathers_day", "grandparents_day"] },
+  { label: "Aunt",        icon: "👩", holidays: ["aunts_uncles_day"] },
+  { label: "Uncle",       icon: "👨", holidays: ["aunts_uncles_day"] },
+  { label: "Friend",      icon: "🤝", holidays: ["friendship_day"] },
+  { label: "Fiancée",     icon: "💍", holidays: ["valentine"] },
+  { label: "Fiancé",      icon: "💍", holidays: ["valentine"] },
+  { label: "Other",       icon: "👤", holidays: [] },
+];
+
+// Calculate the Nth weekday of a given month
+// weekday: 0=Sun, 1=Mon ... 6=Sat
+const nthWeekday = (year, month, weekday, n) => {
+  let count = 0;
+  for (let d = 1; d <= 31; d++) {
+    const date = new Date(year, month, d);
+    if (date.getMonth() !== month) break;
+    if (date.getDay() === weekday) {
+      count++;
+      if (count === n) return date;
+    }
+  }
+  return null;
+};
+
+// Returns days until a holiday for a given year (or next year if passed)
+const daysUntilDate = (date) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (date < today) return null;
+  return Math.ceil((date - today) / 86400000);
+};
+
+// Get all upcoming holiday dates for the current/next year
+export const getHolidayDates = (year) => ({
+  valentine:       new Date(year, 1, 14),           // Feb 14
+  mothers_day:     nthWeekday(year, 4, 0, 2),       // 2nd Sunday of May
+  fathers_day:     nthWeekday(year, 5, 0, 3),       // 3rd Sunday of June
+  grandparents_day: nthWeekday(year, 8, 0, 1),      // 1st Sunday of September
+  daughters_day:   new Date(year, 8, 25),            // Sep 25
+  sons_day:        new Date(year, 2, 4),             // Mar 4
+  siblings_day:    new Date(year, 3, 10),            // Apr 10
+  aunts_uncles_day: new Date(year, 6, 26),           // Jul 26
+  friendship_day:  nthWeekday(year, 7, 0, 1),       // 1st Sunday of August
+  anniversary:     null, // handled separately via profile.anniversary
+});
+
+export const HOLIDAY_LABELS = {
+  valentine:        { label: "Valentine's Day", icon: "❤️" },
+  mothers_day:      { label: "Mother's Day",    icon: "🌸" },
+  fathers_day:      { label: "Father's Day",    icon: "👔" },
+  grandparents_day: { label: "Grandparents Day",icon: "🌟" },
+  daughters_day:    { label: "Daughters Day",   icon: "🌺" },
+  sons_day:         { label: "Sons Day",         icon: "⭐" },
+  siblings_day:     { label: "Siblings Day",    icon: "🤝" },
+  aunts_uncles_day: { label: "Aunts/Uncles Day",icon: "💛" },
+  friendship_day:   { label: "Friendship Day",  icon: "🤝" },
+  anniversary:      { label: "Anniversary",     icon: "💍" },
+};
+
+// Returns upcoming holiday reminders for a profile within `withinDays`
+export const getHolidayReminders = (profile, withinDays = 30) => {
+  if (!profile.relationshipType) return [];
+  const rel = RELATIONSHIP_TYPES.find((r) => r.label === profile.relationshipType);
+  if (!rel) return [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const year = today.getFullYear();
+  const reminders = [];
+
+  rel.holidays.forEach((holidayKey) => {
+    if (holidayKey === "anniversary") return; // handled by nextOcc on profile.anniversary
+
+    // Check this year, then next year
+    for (const y of [year, year + 1]) {
+      const dates = getHolidayDates(y);
+      const date = dates[holidayKey];
+      if (!date) continue;
+      date.setHours(0, 0, 0, 0);
+      const days = Math.ceil((date - today) / 86400000);
+      if (days >= 0 && days <= withinDays) {
+        const meta = HOLIDAY_LABELS[holidayKey];
+        reminders.push({
+          id: profile.id,
+          name: profile.name,
+          type: `${meta.icon} ${meta.label}`,
+          days,
+          holidayKey,
+          relationship: profile.relationshipType,
+        });
+        break; // found the nearest occurrence
+      }
+      if (days > withinDays) break;
+    }
+  });
+
+  return reminders;
+};
+
 export const ACTIONS = [
   { label: "Phone call", points: 5, icon: "📞" },
   { label: "Letter sent", points: 10, icon: "✉️" },
@@ -43,6 +155,9 @@ export const LETTER_TEMPLATES = [
   { label: "Just thinking of you", prompt: "Write a casual warm letter" },
   { label: "Congratulations", prompt: "Write a congratulations letter" },
   { label: "Pastoral encouragement", prompt: "Write a pastoral letter of spiritual encouragement" },
+  { label: "Valentine's Day", prompt: "Write a warm, loving Valentine's Day message" },
+  { label: "Mother's Day", prompt: "Write a heartfelt Mother's Day letter" },
+  { label: "Father's Day", prompt: "Write a heartfelt Father's Day letter" },
 ];
 
 export const BADGES = [
@@ -72,6 +187,7 @@ export const newProfile = () => ({
   address: "",
   interests: "",
   loveLanguage: [],
+  relationshipType: "",
   groups: [],
   budget: 0,
   kids: [],
@@ -123,5 +239,10 @@ export const decayedScore = (p) => {
   return p.score || 0;
 };
 
-export const profileSummary = (p) =>
-  `Name: ${p.name}. Birthday: ${fmtDate(p.birthday) || "unknown"}. Interests: ${p.interests || "unknown"}. Love languages (ranked): ${Array.isArray(p.loveLanguage) && p.loveLanguage.length ? p.loveLanguage.map((ll, i) => `${i + 1}. ${ll}`).join(", ") : p.loveLanguage || "unknown"}. Kids: ${p.kids?.map((k) => k.name).join(",") || "none"}. Pets: ${p.pets?.map((pt) => pt.name).join(",") || "none"}. Memories: ${p.memories?.join("; ") || "none"}. Past gifts: ${p.gifts?.map((g) => g.item).join(",") || "none"}.`;
+export const profileSummary = (p) => {
+  const rel = p.relationshipType ? ` Relationship: ${p.relationshipType}.` : "";
+  const langs = Array.isArray(p.loveLanguage) && p.loveLanguage.length
+    ? p.loveLanguage.map((ll, i) => `${i + 1}. ${ll}`).join(", ")
+    : p.loveLanguage || "unknown";
+  return `Name: ${p.name}.${rel} Birthday: ${fmtDate(p.birthday) || "unknown"}. Interests: ${p.interests || "unknown"}. Love languages (ranked): ${langs}. Kids: ${p.kids?.map((k) => k.name).join(",") || "none"}. Pets: ${p.pets?.map((pt) => pt.name).join(",") || "none"}. Memories: ${p.memories?.join("; ") || "none"}. Past gifts: ${p.gifts?.map((g) => g.item).join(",") || "none"}.`;
+};
