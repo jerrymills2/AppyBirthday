@@ -408,9 +408,14 @@ export default function App() {
   const [newGoalForm, setNewGoalForm] = useState({ label: "", target: "12", personId: "" });
 
   useEffect(() => {
-    initDB();
-    setProfiles(getAllProfiles());
-    setGoals(getAllGoals());
+    try {
+      initDB();
+      setProfiles(getAllProfiles());
+      setGoals(getAllGoals());
+    } catch (e) {
+      console.error("DB init error:", e);
+      Alert.alert("Startup error", String(e));
+    }
     setLoading(false);
     requestPermissions();
   }, []);
