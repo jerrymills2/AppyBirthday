@@ -56,6 +56,7 @@ export const getAllProfiles = () => {
   return rows.map((p) => ({
     ...p,
     groups: tryParse(p.groups, []),
+    loveLanguage: tryParse(p.loveLanguage, []),
     log: getLogsForProfileSync(p.id),
     kids: db.getAllSync("SELECT * FROM kids WHERE profileId=?", [p.id]),
     pets: db.getAllSync("SELECT * FROM pets WHERE profileId=?", [p.id]),
@@ -76,7 +77,7 @@ export const saveProfile = (profile) => {
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       profile.id, profile.name, profile.birthday, profile.anniversary,
-      profile.address, profile.interests, profile.loveLanguage,
+      profile.address, profile.interests, JSON.stringify(Array.isArray(profile.loveLanguage) ? profile.loveLanguage : profile.loveLanguage ? [profile.loveLanguage] : []),
       JSON.stringify(profile.groups || []),
       profile.budget || 0, profile.photo || null,
       profile.score || 0, profile.streakMonths || 0, profile.lastStreakMonth || "",

@@ -71,7 +71,7 @@ export const newProfile = () => ({
   anniversary: "",
   address: "",
   interests: "",
-  loveLanguage: "",
+  loveLanguage: [],
   groups: [],
   budget: 0,
   kids: [],
@@ -124,4 +124,4 @@ export const decayedScore = (p) => {
 };
 
 export const profileSummary = (p) =>
-  `Name: ${p.name}. Birthday: ${fmtDate(p.birthday) || "unknown"}. Interests: ${p.interests || "unknown"}. Love language: ${p.loveLanguage || "unknown"}. Kids: ${p.kids?.map((k) => k.name).join(",") || "none"}. Pets: ${p.pets?.map((pt) => pt.name).join(",") || "none"}. Memories: ${p.memories?.join("; ") || "none"}. Past gifts: ${p.gifts?.map((g) => g.item).join(",") || "none"}.`;
+  `Name: ${p.name}. Birthday: ${fmtDate(p.birthday) || "unknown"}. Interests: ${p.interests || "unknown"}. Love languages (ranked): ${Array.isArray(p.loveLanguage) && p.loveLanguage.length ? p.loveLanguage.map((ll, i) => `${i + 1}. ${ll}`).join(", ") : p.loveLanguage || "unknown"}. Kids: ${p.kids?.map((k) => k.name).join(",") || "none"}. Pets: ${p.pets?.map((pt) => pt.name).join(",") || "none"}. Memories: ${p.memories?.join("; ") || "none"}. Past gifts: ${p.gifts?.map((g) => g.item).join(",") || "none"}.`;

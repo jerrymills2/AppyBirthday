@@ -103,14 +103,28 @@ const EditProfile = ({ profile, onSave, onCancel }) => {
         <SectionLabel text="Interests & notes" />
         <TextInput style={[styles.input, { height: 80 }]} value={p.interests} onChangeText={(v) => set("interests", v)} placeholder="Loves hiking, coffee, classic literature..." multiline />
 
-        <SectionLabel text="Love language" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
-          {LOVE_LANGUAGES.map((ll) => (
-            <TouchableOpacity key={ll} onPress={() => set("loveLanguage", p.loveLanguage === ll ? "" : ll)} style={[styles.chipBtn, p.loveLanguage === ll && { backgroundColor: LIGHT_GOLD, borderColor: GOLD }]}>
-              <Text style={[styles.chipText, p.loveLanguage === ll && { color: GOLD }]}>{ll}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <SectionLabel text="Love languages (tap to rank, tap again to remove)" />
+        <View style={styles.chipRow}>
+          {LOVE_LANGUAGES.map((ll) => {
+            const langs = Array.isArray(p.loveLanguage) ? p.loveLanguage : p.loveLanguage ? [p.loveLanguage] : [];
+            const rank = langs.indexOf(ll);
+            const selected = rank !== -1;
+            const toggleLL = () => {
+              if (selected) {
+                set("loveLanguage", langs.filter((x) => x !== ll));
+              } else {
+                set("loveLanguage", [...langs, ll]);
+              }
+            };
+            return (
+              <TouchableOpacity key={ll} onPress={toggleLL} style={[styles.chipBtn, selected && { backgroundColor: LIGHT_GOLD, borderColor: GOLD }]}>
+                {selected && <Text style={{ fontSize: 11, color: GOLD, fontWeight: "700", marginRight: 3 }}>#{rank + 1}</Text>}
+                <Text style={[styles.chipText, selected && { color: GOLD }]}>{ll}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        {(() => { const langs = Array.isArray(p.loveLanguage) ? p.loveLanguage : p.loveLanguage ? [p.loveLanguage] : []; return langs.length > 0 ? (<Text style={{ fontSize: 12, color: GOLD, marginTop: 4 }}>Ranked: {langs.map((ll, i) => `${i + 1}. ${ll}`).join("  ·  ")}</Text>) : null; })()}
 
         <SectionLabel text="Groups" />
         <View style={styles.chipRow}>
@@ -266,6 +280,7 @@ const ProfileDetail = ({ profile, onUpdate, onEdit, onDelete, onBack, onQuickLog
           )}
         </View>
 
+        {(() => { const langs = Array.isArray(p.loveLanguage) ? p.loveLanguage : p.loveLanguage ? [p.loveLanguage] : []; return langs.length > 0 ? (<Card><SectionLabel text="Love languages (ranked)" /><View style={styles.chipRow}>{langs.map((ll, i) => <View key={ll} style={[styles.chipBtn, { backgroundColor: LIGHT_GOLD, borderColor: GOLD }]}><Text style={{ fontSize: 11, color: GOLD, fontWeight: "700", marginRight: 3 }}>#{i + 1}</Text><Text style={[styles.chipText, { color: GOLD }]}>{ll}</Text></View>)}</View></Card>) : null; })()}
         {p.interests ? <Card><SectionLabel text="Interests & notes" /><Text style={styles.bodyText}>{p.interests}</Text></Card> : null}
         {p.address ? <Card><SectionLabel text="Address" /><Text style={styles.bodyText}>{p.address}</Text></Card> : null}
         {p.kids?.length > 0 && <Card><SectionLabel text="Kids" />{p.kids.map((k, i) => <Text key={i} style={styles.bodyText}>{k.name}{k.birthday ? ` — ${fmtDate(k.birthday)}` : ""}</Text>)}</Card>}
@@ -470,7 +485,7 @@ export default function App() {
     if (!profiles.length) { Alert.alert("Add people first!"); return; }
     setXmasLoading(true); setXmasResult("");
     const perPerson = Math.round(Number(xmasBudget) / profiles.length);
-    const list = profiles.map((p) => `${p.name} (budget ~$${p.budget || perPerson}): interests=${p.interests || "unknown"}, love language=${p.loveLanguage || "unknown"}`).join("\n");
+    const list = profiles.map((p) => { const langs = Array.isArray(p.loveLanguage) ? p.loveLanguage : p.loveLanguage ? [p.loveLanguage] : []; return `${p.name} (budget ~$${p.budget || perPerson}): interests=${p.interests || "unknown"}, love languages=${langs.length ? langs.join(", ") : "unknown"}`; }).join("\n");
     try {
       setXmasResult(await callAI(`Christmas gift list, 3 ideas per person, respect budgets.\n\n${list}\n\nFormat: ## [Name]\n1. idea\n2. idea\n3. idea`, 2000));
     } catch { setXmasResult("Error — update PROXY_URL in src/api.js first."); }
@@ -490,7 +505,7 @@ export default function App() {
 
   const exportCSV = async () => {
     const rows = [["Name", "Birthday", "Anniversary", "Address", "Interests", "Love Language", "Groups", "Score", "Budget"]];
-    profiles.forEach((p) => rows.push([p.name, p.birthday, p.anniversary, p.address, p.interests, p.loveLanguage, (p.groups || []).join("|"), p.score || 0, p.budget || 0]));
+    profiles.forEach((p) => { const langs = Array.isArray(p.loveLanguage) ? p.loveLanguage : p.loveLanguage ? [p.loveLanguage] : []; rows.push([p.name, p.birthday, p.anniversary, p.address, p.interests, langs.join("|"), (p.groups || []).join("|"), p.score || 0, p.budget || 0]); });
     const csv = rows.map((r) => r.map((v) => `"${(v || "").toString().replace(/"/g, '""')}"`).join(",")).join("\n");
     const uri = FileSystem.documentDirectory + "appy-birthday.csv";
     await FileSystem.writeAsStringAsync(uri, csv);
