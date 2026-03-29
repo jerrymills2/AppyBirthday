@@ -1,29 +1,39 @@
 {
   "expo": {
-    "name": "AppyBirthday",
-    "slug": "AppyBirthday",
+    "name": "Appy Birthday",
+    "slug": "appy-birthday",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#E6F1FB"
     },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.yourname.appybirthday",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "To add birthdays to your calendar",
+        "NSContactsUsageDescription": "To import contact information"
+      }
     },
     "android": {
+      "package": "com.yourname.appybirthday",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#185FA5"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": [
+        "NOTIFICATIONS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
+      ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      "expo-notifications",
+      "expo-sqlite"
+    ]
   }
 }
