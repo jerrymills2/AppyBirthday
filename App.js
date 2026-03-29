@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, Alert, ActivityIndicator,
-  SafeAreaView, StatusBar,
+  SafeAreaView, StatusBar, Platform,
 } from "react-native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -78,14 +78,15 @@ const EditProfile = ({ profile, onSave, onCancel }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onCancel}>
+          <Text style={[styles.backArrow, { color: BLUE }]}>← Cancel</Text>
+        </TouchableOpacity>
+        <Text style={styles.screenTitle}>{profile.name ? "Edit Person" : "New Person"}</Text>
+        <Btn label="Save" onPress={() => onSave(p)} fill color={BLUE} small />
+      </View>
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.rowBetween}>
-          <TouchableOpacity onPress={onCancel}>
-            <Text style={[styles.backArrow, { color: BLUE }]}>← Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.screenTitle}>{profile.name ? "Edit Person" : "New Person"}</Text>
-          <Btn label="Save" onPress={() => onSave(p)} fill color={BLUE} small />
-        </View>
+        <View style={{ height: 10 }} />
 
         <SectionLabel text="Name *" />
         <TextInput style={styles.input} value={p.name} onChangeText={(v) => set("name", v)} placeholder="Full name" />
@@ -237,22 +238,19 @@ const ProfileDetail = ({ profile, onUpdate, onEdit, onDelete, onBack, onQuickLog
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
-        <View style={[styles.rowBetween, { marginBottom: 12 }]}>
-          <TouchableOpacity onPress={onBack}><Text style={[styles.backArrow, { color: BLUE }]}>←</Text></TouchableOpacity>
-          <Avatar p={p} size={52} />
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={styles.profileName}>{p.name}</Text>
-            <View style={[styles.row, { flexWrap: "wrap" }]}>
-              <Pill label={tier.label} color={tier.color} bg={tier.bg} />
-              {p.loveLanguage ? <Pill label={p.loveLanguage} color={GOLD} bg={LIGHT_GOLD} /> : null}
-              {(p.groups || []).map((g) => <Pill key={g} label={g} color={GREEN} bg={LIGHT_GREEN} />)}
-            </View>
-          </View>
-          <Btn label="Edit" onPress={onEdit} color={BLUE} small />
-          <View style={{ width: 4 }} />
-          <Btn label="Del" onPress={() => Alert.alert("Delete", `Remove ${p.name}?`, [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => onDelete(p.id) }])} color={RED} small />
+      <View style={[styles.header, { paddingVertical: 10 }]}>
+        <TouchableOpacity onPress={onBack}><Text style={[styles.backArrow, { color: BLUE }]}>←</Text></TouchableOpacity>
+        <Avatar p={p} size={40} />
+        <View style={{ flex: 1, marginLeft: 8 }}>
+          <Text style={styles.screenTitle} numberOfLines={1}>{p.name}</Text>
+          <Pill label={tier.label} color={tier.color} bg={tier.bg} />
         </View>
+        <Btn label="Edit" onPress={onEdit} color={BLUE} small />
+        <View style={{ width: 4 }} />
+        <Btn label="Del" onPress={() => Alert.alert("Delete", `Remove ${p.name}?`, [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => onDelete(p.id) }])} color={RED} small />
+      </View>
+      <ScrollView style={styles.container}>
+        <View style={{ height: 10 }} />
 
         {overdue && <Card style={{ backgroundColor: "#FCEBEB", borderColor: RED }}><Text style={{ color: RED, fontSize: 13 }}>⚠️ No contact in {daysSince(p.log?.[0]?.date)} days{decayAmt > 0 ? ` — score decaying (−${decayAmt} pts)` : ""}</Text></Card>}
         {p.streakMonths > 1 && <Card style={{ backgroundColor: LIGHT_GOLD, borderColor: GOLD }}><Text style={{ color: GOLD, fontSize: 13 }}>🔥 {p.streakMonths}-month streak!</Text></Card>}
@@ -558,11 +556,11 @@ export default function App() {
         </View>
       )}
 
-      <ScrollView style={styles.container} stickyHeaderIndices={[0]}>
-        <View style={[styles.header, { backgroundColor: "#fff" }]}>
-          <Text style={styles.appTitle}>Appy Birthday</Text>
-          <Btn label="+ Add" onPress={() => { setEditing(null); setView("new"); }} fill color={BLUE} small />
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.appTitle}>🎂 Appy Birthday</Text>
+        <Btn label="+ Add" onPress={() => { setEditing(null); setView("new"); }} fill color={BLUE} small />
+      </View>
+      <ScrollView style={styles.container}>
 
         <TextInput style={[styles.input, { marginBottom: 8, marginTop: 0 }]} placeholder="Search people..." value={search} onChangeText={setSearch} />
 
@@ -954,11 +952,11 @@ export default function App() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#fff" },
+  safeArea: { flex: 1, backgroundColor: "#fff", paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0 },
   container: { flex: 1, paddingHorizontal: 14 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 2 },
-  appTitle: { fontSize: 22, fontWeight: "600", color: BLUE },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 14, backgroundColor: LIGHT_BLUE, borderBottomWidth: 1, borderBottomColor: "#cce0f5" },
+  appTitle: { fontSize: 22, fontWeight: "700", color: BLUE },
   screenTitle: { fontSize: 17, fontWeight: "600", color: BLUE },
   backArrow: { fontSize: 16, paddingRight: 8 },
   profileName: { fontSize: 18, fontWeight: "600" },
