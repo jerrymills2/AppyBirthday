@@ -8,7 +8,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 
-import { initDB, getAllProfiles, saveProfile, deleteProfile, addLog, addGift, addPrayer, getAllGoals, saveGoal, deleteGoal } from "./src/database";
+import { initDB, getAllProfiles, saveProfile, deleteProfile, addLog, updateLog, deleteLog, addGift, addPrayer, getAllGoals, saveGoal, deleteGoal } from "./src/database";
 import { callAI } from "./src/api";
 import { requestPermissions, rescheduleAllNotifications } from "./src/notifications";
 import {
@@ -178,6 +178,78 @@ const EditProfile = ({ profile, onSave, onCancel }) => {
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+};
+
+// ─── Activity Log (editable) ─────────────────────────────────────────────────
+const ActivityLog = ({ log, profileId, onUpdate, refreshProfile }) => {
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  const startEdit = (entry) => {
+    setEditingId(entry.id);
+    setEditForm({ date: entry.date, action: entry.action, points: String(entry.points), note: entry.note || "" });
+  };
+
+  const saveEdit = () => {
+    updateLog(editingId, { ...editForm, points: Number(editForm.points) || 0 });
+    setEditingId(null);
+    refreshProfile();
+  };
+
+  const confirmDelete = (id) => {
+    Alert.alert("Delete entry", "Remove this activity?", [
+      { text: "Cancel" },
+      { text: "Delete", style: "destructive", onPress: () => { deleteLog(id); refreshProfile(); } },
+    ]);
+  };
+
+  return (
+    <Card>
+      <SectionLabel text="Recent activity" />
+      {log.slice(0, 10).map((l) => (
+        <View key={l.id ?? l.date + l.action}>
+          {editingId === l.id ? (
+            <View style={{ paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: "#eee" }}>
+              <View style={styles.row}>
+                <TextInput style={[styles.input, { flex: 1, marginRight: 6, marginTop: 0 }]} value={editForm.date} onChangeText={(v) => setEditForm((f) => ({ ...f, date: v }))} placeholder="YYYY-MM-DD" />
+                <TextInput style={[styles.input, { width: 60, marginTop: 0 }]} value={editForm.points} onChangeText={(v) => setEditForm((f) => ({ ...f, points: v }))} keyboardType="numeric" placeholder="pts" />
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+                {ACTIONS.map((a) => (
+                  <TouchableOpacity key={a.label} onPress={() => setEditForm((f) => ({ ...f, action: a.label, points: String(a.points) }))} style={[styles.chipBtn, editForm.action === a.label && { backgroundColor: LIGHT_GOLD, borderColor: GOLD }]}>
+                    <Text style={[styles.chipText, editForm.action === a.label && { color: GOLD }]}>{a.icon} {a.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TextInput style={[styles.input, { marginTop: 4 }]} value={editForm.note} onChangeText={(v) => setEditForm((f) => ({ ...f, note: v }))} placeholder="Note (optional)..." />
+              <View style={styles.btnRow}>
+                <Btn label="Save" onPress={saveEdit} color={GOLD} fill small />
+                <Btn label="Cancel" onPress={() => setEditingId(null)} color={RED} small />
+              </View>
+            </View>
+          ) : (
+            <View style={[styles.rowBetween, { paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: "#eee" }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13 }}>
+                  <Text style={{ color: "#888" }}>{l.date}</Text>{" — "}{l.action}{" "}
+                  <Text style={{ color: GOLD }}>+{l.points}</Text>
+                  {l.note ? ` · ${l.note}` : ""}
+                </Text>
+              </View>
+              <View style={styles.row}>
+                <TouchableOpacity onPress={() => startEdit(l)} style={{ paddingHorizontal: 8 }}>
+                  <Text style={{ color: BLUE, fontSize: 13 }}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => confirmDelete(l.id)}>
+                  <Text style={{ color: RED, fontSize: 13 }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      ))}
+    </Card>
   );
 };
 
@@ -362,16 +434,12 @@ const ProfileDetail = ({ profile, onUpdate, onEdit, onDelete, onBack, onQuickLog
         </Card>
 
         {p.log?.length > 0 && (
-          <Card>
-            <SectionLabel text="Recent activity" />
-            {p.log.slice(0, 8).map((l, i) => (
-              <Text key={i} style={styles.logRow}>
-                <Text style={{ color: "#888" }}>{l.date}</Text>{" — "}{l.action}{" "}
-                <Text style={{ color: GOLD }}>+{l.points}</Text>
-                {l.note ? ` · ${l.note}` : ""}
-              </Text>
-            ))}
-          </Card>
+          <ActivityLog
+            log={p.log}
+            onUpdate={(updatedLog) => onUpdate({ ...p, log: updatedLog })}
+            profileId={p.id}
+            refreshProfile={() => { const fresh = getAllProfiles().find((x) => x.id === p.id); if (fresh) onUpdate(fresh); }}
+          />
         )}
 
         <View style={{ height: 40 }} />

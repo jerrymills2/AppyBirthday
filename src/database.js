@@ -119,6 +119,17 @@ export const addLog = (profileId, entry) => {
   );
 };
 
+export const updateLog = (id, entry) => {
+  getDB().runSync(
+    "UPDATE logs SET date=?, action=?, points=?, note=? WHERE id=?",
+    [entry.date, entry.action, entry.points, entry.note || "", id]
+  );
+};
+
+export const deleteLog = (id) => {
+  getDB().runSync("DELETE FROM logs WHERE id=?", [id]);
+};
+
 export const addGift = (profileId, gift) => {
   getDB().runSync(
     "INSERT INTO gifts (profileId,item,date,occasion) VALUES (?,?,?,?)",
