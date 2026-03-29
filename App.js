@@ -269,7 +269,7 @@ const ProfileDetail = ({ profile, onUpdate, onEdit, onDelete, onBack, onQuickLog
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={{ height: 10 }} />
 
-        {overdue && <Card style={{ backgroundColor: "#FCEBEB", borderColor: RED }}><Text style={{ color: RED, fontSize: 13 }}>⚠️ No contact in {daysSince(p.log?.[0]?.date)} days{decayAmt > 0 ? ` — score decaying (−${decayAmt} pts)` : ""}</Text></Card>}
+        {overdue && <Card style={{ backgroundColor: "#FCEBEB", borderColor: RED }}><Text style={{ color: RED, fontSize: 13 }}>{daysSince(p.log?.[0]?.date) > 365 ? "🚨 Start Connecting Now! It's been over a year." : `⚠️ No contact in ${daysSince(p.log?.[0]?.date)} days`}{decayAmt > 0 ? ` — score decaying (−${decayAmt} pts)` : ""}</Text></Card>}
         {p.streakMonths > 1 && <Card style={{ backgroundColor: LIGHT_GOLD, borderColor: GOLD }}><Text style={{ color: GOLD, fontSize: 13 }}>🔥 {p.streakMonths}-month streak!</Text></Card>}
 
         <View style={styles.statsGrid}>
@@ -529,7 +529,7 @@ export default function App() {
     if (an !== null && an <= 30) items.push({ name: p.name, type: "Anniversary", days: an, id: p.id });
     p.kids?.forEach((k) => { const kd = nextOcc(k.birthday); if (kd !== null && kd <= 30) items.push({ name: p.name, type: `${k.name}'s Birthday`, days: kd, id: p.id }); });
     const ds = daysSince(p.log?.[0]?.date);
-    if (ds > 30) items.push({ name: p.name, type: `No contact in ${ds} days`, days: null, id: p.id });
+    if (ds > 30) items.push({ name: p.name, type: ds > 365 ? "Start Connecting Now!" : `No contact in ${ds} days`, days: null, id: p.id });
     return items;
   }).sort((a, b) => (a.days ?? 999) - (b.days ?? 999));
 
