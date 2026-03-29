@@ -33,7 +33,8 @@
     },
     "plugins": [
       "expo-notifications",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-asset"
     ]
   }
 }
